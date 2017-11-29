@@ -24,6 +24,10 @@ class LcpParameters{
 
   public function get_query_params($params){
     $this->params = $params;
+
+    // An array to store "wrong" params processing results.
+    $flags = array();
+
     # Essential parameters:
     $args = array(
       'numberposts' => $params['numberposts'],
@@ -97,6 +101,9 @@ class LcpParameters{
           // AND relationship
           $args['tag__and'] = $tags;
         }
+      } else {
+        // Set a flag when current page has no tags
+        $flags[] = 'currenttags_err';
       }
     }
 
@@ -137,7 +144,7 @@ class LcpParameters{
       add_filter('posts_where' , array( $this, 'starting_with') );
     }
 
-    return $args;
+    return array($args, $flags);
   }
 
     private function lcp_check_basic_params($args){

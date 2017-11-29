@@ -81,13 +81,18 @@ class CatList{
       'child_categories' => $this->params['child_categories'],
     ], $this->lcp_category_id);
     $processed_params = LcpParameters::get_instance()->get_query_params($this->params);
-    $args = array_merge($args, $processed_params);
+    $flags = $processed_params[1];
+    $args = array_merge($args, $processed_params[0]);
     $args = $this->check_pagination($args);
 
     // for WP_Query compatibility
     // http://core.trac.wordpress.org/browser/tags/3.7.1/src/wp-includes/post.php#L1686
     $args['posts_per_page'] = $args['numberposts'];
 
+    if ( !$this->lcp_should_return_posts($flags) ) {
+      // Don't return any posts (but allow sticky posts)
+      $args['post__in'] = array(0);
+    }
     if ('no' === $this->params['main_query']) {
       // Use a standard Loop with WP_Query.
       $lcp_query = new WP_Query($args);
@@ -97,6 +102,7 @@ class CatList{
       global $wp_query;
       $lcp_query = $wp_query;
     }
+
     $this->posts_count = $lcp_query->found_posts;
 
     remove_all_filters('posts_orderby');
@@ -109,8 +115,19 @@ class CatList{
      posts combination that I called has no posts? By default I've
      always returned the latest posts because that's what the query
      does when the params are "wrong". But could make for a better user
-     experience if I returned an empty list in certain cases.
-     private function lcp_should_return_posts() */
+     experience if I returned an empty list in certain cases.*/
+
+  /**
+   * Check flags set by set_lcp_parameters
+   */
+  private function lcp_should_return_posts($flags) {
+    // This only checkes if flags are set but it could parse specific flags.
+    if ( !empty($flags)) {
+      return false;
+    } else {
+      return true;
+    }
+  }
 
   /** HELPER FUNCTIONS **/
 
